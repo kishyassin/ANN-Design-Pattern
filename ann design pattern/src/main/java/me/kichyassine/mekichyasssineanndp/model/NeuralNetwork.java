@@ -56,6 +56,37 @@ public final class NeuralNetwork {
         return state.predict(this, input);
     }
 
+    public NetworkMemento saveCheckpoint() {
+        List<double[]> snapshot = layers.stream()
+                .map(layer -> layer.neurons().stream().mapToDouble(Neuron::bias).toArray())
+                .toList();
+        return new NetworkMemento(state, snapshot);
+    }
+
+    public void restoreCheckpoint(NetworkMemento memento) {
+        Objects.requireNonNull(memento, "Checkpoint memento must not be null.");
+        List<double[]> savedBiases = memento.layerBiases();
+        if (savedBiases.size() != layers.size()) {
+            throw new IllegalArgumentException("Incompatible checkpoint: layer count mismatch.");
+        }
+        for (int i = 0; i < layers.size(); i++) {
+            List<Neuron> neurons = layers.get(i).neurons();
+            if (savedBiases.get(i).length != neurons.size()) {
+                throw new IllegalArgumentException("Incompatible checkpoint: neuron count mismatch at layer " + i + ".");
+            }
+        }
+        for (int i = 0; i < layers.size(); i++) {
+            List<Neuron> neurons = layers.get(i).neurons();
+            double[] biases = savedBiases.get(i);
+            for (int j = 0; j < neurons.size(); j++) {
+                neurons.get(j).setBias(biases[j]);
+            }
+        }
+        if (state != memento.state()) {
+            transitionTo(memento.state());
+        }
+    }
+
     void transitionTo(NetworkState current) {
         NetworkState previous = state;
         state = current;

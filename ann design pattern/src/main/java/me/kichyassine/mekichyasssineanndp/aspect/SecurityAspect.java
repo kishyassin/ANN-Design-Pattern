@@ -10,7 +10,8 @@ public class SecurityAspect {
             + " || execution(* me.kichyassine.mekichyasssineanndp.model.NeuralNetwork.stop(..))"
             + " || execution(* me.kichyassine.mekichyasssineanndp.model.NeuralNetwork.train(..))"
             + " || execution(* me.kichyassine.mekichyasssineanndp.model.NeuralNetwork.predict(..))"
-            + " || execution(* me.kichyassine.mekichyasssineanndp.model.NeuralNetwork.decorateLayer(..))")
+            + " || execution(* me.kichyassine.mekichyasssineanndp.model.NeuralNetwork.decorateLayer(..))"
+            + " || execution(* me.kichyassine.mekichyasssineanndp.model.NeuralNetwork.restoreCheckpoint(..))")
     public void requireOperator(JoinPoint point) {
         if (NetworkAccess.currentRole() != NetworkAccess.Role.OPERATOR) {
             throw new SecurityException("Access denied to " + point.getSignature().getName()

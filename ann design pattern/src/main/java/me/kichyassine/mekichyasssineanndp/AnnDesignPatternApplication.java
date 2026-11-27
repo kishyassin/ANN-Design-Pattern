@@ -1,10 +1,14 @@
 package me.kichyassine.mekichyasssineanndp;
 
 import me.kichyassine.mekichyasssineanndp.activation.ActivationAdapter;
+import me.kichyassine.mekichyasssineanndp.activation.ActivationFactory;
+import me.kichyassine.mekichyasssineanndp.activation.ActivationType;
 import me.kichyassine.mekichyasssineanndp.activation.Sigmoid;
 import me.kichyassine.mekichyasssineanndp.activation.Softmax;
 import me.kichyassine.mekichyasssineanndp.aspect.NetworkAccess;
+import me.kichyassine.mekichyasssineanndp.builder.NeuralNetworkBuilder;
 import me.kichyassine.mekichyasssineanndp.decorator.TimedLayer;
+import me.kichyassine.mekichyasssineanndp.memento.NetworkHistory;
 import me.kichyassine.mekichyasssineanndp.model.*;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -60,6 +64,37 @@ public class AnnDesignPatternApplication {
         demonstrateActivations();
         demonstrateDecorator(network, input, result);
         demonstrateSecurity(network, input);
+        demonstrateImprovements();
+    }
+
+    private static void demonstrateImprovements() {
+        System.out.println("\nTask 4 improvements (Builder, Factory, Memento)");
+        NeuralNetwork fig11Network = new NeuralNetworkBuilder()
+                .inputLayer(3)
+                .hiddenLayer(5, ActivationType.SIGMOID)
+                .outputLayer(2, ActivationFactory.create("relu"), new Softmax())
+                .withWeightInitializer(() -> 0.5)
+                .withBiasInitializer(() -> 0.1)
+                .build();
+
+        NetworkHistory history = new NetworkHistory();
+        fig11Network.fit();
+        fig11Network.stop();
+        history.push(fig11Network.saveCheckpoint());
+
+        double[][] trainingInputs = {{1.0, 0.5, 0.25}, {0.2, 0.8, 0.6}};
+        double[][] trainingTargets = {{0.8, 0.2}, {0.3, 0.7}};
+        fig11Network.train(trainingInputs, trainingTargets);
+
+        double[] prediction = fig11Network.predict(trainingInputs[0]);
+        System.out.printf(Locale.ROOT, "3-5-2 Fig. 11.1 prediction = [%.6f, %.6f]%n",
+                prediction[0], prediction[1]);
+
+        fig11Network.restoreCheckpoint(history.pop());
+        System.out.println("State after Memento rollback : " + fig11Network.state());
+        if (fig11Network.state() != NetworkState.ARRET) {
+            throw new IllegalStateException("Memento rollback must restore the saved state.");
+        }
     }
 
     private static void demonstrateSecurity(NeuralNetwork network, double[] input) {
