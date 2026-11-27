@@ -6,7 +6,6 @@ import me.kichyassine.mekichyasssineanndp.activation.Softmax;
 import me.kichyassine.mekichyasssineanndp.aspect.NetworkAccess;
 import me.kichyassine.mekichyasssineanndp.decorator.TimedLayer;
 import me.kichyassine.mekichyasssineanndp.model.*;
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.util.ArrayList;
