@@ -3,10 +3,13 @@ package me.kichyassine.mekichyasssineanndp;
 import me.kichyassine.mekichyasssineanndp.activation.ActivationAdapter;
 import me.kichyassine.mekichyasssineanndp.activation.Sigmoid;
 import me.kichyassine.mekichyasssineanndp.activation.Softmax;
+import me.kichyassine.mekichyasssineanndp.aspect.NetworkAccess;
+import me.kichyassine.mekichyasssineanndp.decorator.TimedLayer;
 import me.kichyassine.mekichyasssineanndp.model.*;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -15,6 +18,10 @@ import java.util.Locale;
 public class AnnDesignPatternApplication {
 
     public static void main(String[] args) {
+        NetworkAccess.runAs(NetworkAccess.Role.OPERATOR, AnnDesignPatternApplication::demonstrateNetwork);
+    }
+
+    private static void demonstrateNetwork() {
         Neuron first = new Neuron(0);
         Neuron second = new Neuron(0);
         Neuron hidden = new Neuron(0.5);
@@ -52,6 +59,34 @@ public class AnnDesignPatternApplication {
             throw new IllegalStateException("Incorrect lifecycle or training.");
         }
         demonstrateActivations();
+        demonstrateDecorator(network, input, result);
+        demonstrateSecurity(network, input);
+    }
+
+    private static void demonstrateSecurity(NeuralNetwork network, double[] input) {
+        System.out.println("\nAccess control");
+        NetworkAccess.runAs(NetworkAccess.Role.VIEWER, () -> {
+            try {
+                network.predict(input);
+                throw new AssertionError("A VIEWER must not be able to predict.");
+            } catch (SecurityException expected) {
+                System.out.println("VIEWER : " + expected.getMessage());
+            }
+        });
+        System.out.println("OPERATOR : authorized prediction " + Arrays.toString(network.predict(input)));
+    }
+
+    private static void demonstrateDecorator(NeuralNetwork network, double[] input, double[] expected) {
+        System.out.println("\nTiming decorator");
+        List<Long> durations = new ArrayList<>();
+        network.decorateLayer(1, layer -> new TimedLayer(layer, durations::add));
+        double[] withTiming = network.predict(input);
+        if (durations.size() != 1 || !Arrays.equals(expected, withTiming)) {
+            throw new IllegalStateException("The decorator must time a single propagation and preserve the output.");
+        }
+        System.out.printf("Hidden layer : %d ns%n", durations.get(0));
+        System.out.printf("Prediction without / with decorator : %s / %s%n",
+                Arrays.toString(expected), Arrays.toString(withTiming));
     }
 
     private static void demonstrateActivations() {
